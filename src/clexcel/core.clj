@@ -16,10 +16,13 @@
 (def tz-here (t/time-zone-for-id "Europe/Vienna"))
 
 (defn month-of
+  "Returns the month of the datum cell of a row"
   [entry]
-  (t/month
-   (tc/to-local-date
-    (t/to-time-zone (tc/to-date-time (:datum entry)) tz-here))))
+  (t/month (tc/to-local-date (timezoned (:datum entry)))))
+
+(defn timezoned
+  [date]
+  (when-not (nil? date) (t/to-time-zone (tc/to-date-time date) tz-here)))
 
 (defn load-month
   [m]
@@ -34,7 +37,23 @@
   "takes a vec of maps and prepares it for an excel sheet"
   [raw]
   (cons ["Datum" "Von" "Bis" "Dauer" "Projekt" "Task" "Beschreibung" "Überstunden"]
-        (map map-values-to-vec raw)))
+        (map map-values-to-vec (fix-times raw))))
+
+(defn fix-times
+  [raw]
+  (map fix-time-bis (map fix-time-von raw)))
+
+(defn fix-time-von
+  [entry]
+  (update-in entry [:von] fix-t))
+
+(defn fix-time-bis
+  [entry]
+  (update-in entry [:bis] fix-t))
+
+(defn fix-t
+  [time]
+  (tc/to-date (t/plus (timezoned time) (t/days 1))))
 
 (defn save-month
   [data]
