@@ -64,30 +64,33 @@
   [col sheet]
   (seq (map #(.getCell % col) (row-seq sheet))))
 
-(defn format-time
-  [cell]
-  (apply-date-format! cell "hh:mm"))
+(defn format-cell
+  [cell fmt]
+  (apply-date-format! cell fmt))
 
-(defn format-times
+(defn format-cols
   [sheet]
-;  (map format-time (col-seq 1 sheet))
-  (doseq [cell (col-seq 1 s)] (format-time cell)))
+  (do
+    (doseq [cell (col-seq 0 sheet)] (format-cell cell "dd.MM.yyyy"))
+    (doseq [cell (col-seq 1 sheet)] (format-cell cell "hh:mm"))
+    (doseq [cell (col-seq 2 sheet)] (format-cell cell "hh:mm"))
+    (doseq [cell (col-seq 3 sheet)] (format-cell cell "0.00"))
+    (doseq [cell (col-seq 7 sheet)] (format-cell cell "0.00"))))
 
 (defn format-col-size
   [sheet]
-  (doseq [col (range 7)] (.autoSizeColumn sheet col)))
+  (doseq [col (range 8)] (.autoSizeColumn sheet col)))
 
 (defn save-month
   [data]
-  (let [wb (create-xls-workbook "Zeiterfassung" data)
+  (let [wb (create-workbook "Zeiterfassung" data)
         sheet (select-sheet "Zeiterfassung" wb)
         header-row (first (row-seq sheet))]
     (do
-      (format-header wb header-row)
-      (format-times sheet)
-      (println (.getDataFormatString (.getCellStyle (second (second sheet)))))
+      (format-cols sheet)
       (format-col-size sheet)
-      (save-workbook! "2015-05.xls" wb))))
+      (format-header wb header-row)
+      (save-workbook! "2015-05.xlsx" wb))))
 
 (defn -main
   "I don't do a whole lot ... yet."
