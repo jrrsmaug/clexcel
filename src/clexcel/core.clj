@@ -68,18 +68,23 @@
   [cell fmt]
   (apply-date-format! cell fmt))
 
+(defn format-col
+  [sheet col fmt]
+  (doseq [cell (col-seq col sheet)] (format-cell cell fmt)))
+
 (defn format-cols
   [sheet]
   (do
-    (doseq [cell (col-seq 0 sheet)] (format-cell cell "dd.MM.yyyy"))
-    (doseq [cell (col-seq 1 sheet)] (format-cell cell "hh:mm"))
-    (doseq [cell (col-seq 2 sheet)] (format-cell cell "hh:mm"))
-    (doseq [cell (col-seq 3 sheet)] (format-cell cell "0.00"))
-    (doseq [cell (col-seq 7 sheet)] (format-cell cell "0.00"))))
+    (format-col sheet 0 "dd.MM.yyyy")
+    (format-col sheet 1 "hh:mm")
+    (format-col sheet 2 "hh:mm")
+    (format-col sheet 3 "0.00")
+    (format-col sheet 7 "0.00")))
 
 (defn format-col-size
   [sheet]
-  (doseq [col (range 8)] (.autoSizeColumn sheet col)))
+  (doseq [col (range 8)]
+    (.autoSizeColumn sheet col)))
 
 (defn save-month
   [data]
