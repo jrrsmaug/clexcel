@@ -65,12 +65,13 @@
   (seq (map #(.getCell % col) (row-seq sheet))))
 
 (defn format-cell
-  [cell fmt]
-  (apply-date-format! cell fmt))
+  [cell format]
+  (apply-date-format! cell format))
 
 (defn format-col
   [sheet col fmt]
-  (doseq [cell (col-seq col sheet)] (format-cell cell fmt)))
+  (doseq [cell (col-seq col sheet)]
+    (format-cell cell fmt)))
 
 (defn format-cols
   [sheet]
@@ -79,12 +80,55 @@
     (format-col sheet 1 "hh:mm")
     (format-col sheet 2 "hh:mm")
     (format-col sheet 3 "0.00")
+    (format-col sheet 4 "@")
+    (format-col sheet 5 "@")
+    (format-col sheet 6 "@")
     (format-col sheet 7 "0.00")))
 
 (defn format-col-size
   [sheet]
   (doseq [col (range 8)]
     (.autoSizeColumn sheet col)))
+
+(defn datum-of
+  [row]
+  (when-not (empty? row)
+    (if (= 0 (.getCellType (first row)))
+      (.getDateCellValue (first row)))))
+
+(defn same-day?
+  ([row1]
+   false)
+  ([row1 row2]
+   (= (datum-of row1) (datum-of row2))))
+
+(defn provide-style
+  [cell workbook]
+  (let [style (.getCellStyle cell)]
+    (if (nil? style)
+      (.createCellStyle workbook)
+      style)))
+
+(defn cell-border
+  [cell]
+  (let [workbook (.. cell getSheet getWorkbook)]
+    (.setBorderBottom (provide-style cell workbook) (border :thin))))
+
+(defn row-border
+  [row]
+  (doall (map cell-border (cell-seq row))))
+
+(defn sep-day
+  [rows]
+  (when-not (empty? rows)
+    (if (same-day? (first rows) (second rows))
+      (println "ok")
+      (row-border (first rows)))
+    (sep-day (rest rows))))
+
+(defn separate-days
+  [sheet]
+  (sep-day (row-seq sheet)))
 
 (defn save-month
   [data]
@@ -93,6 +137,7 @@
         header-row (first (row-seq sheet))]
     (do
       (format-cols sheet)
+      (separate-days sheet)
       (format-col-size sheet)
       (format-header wb header-row)
       (save-workbook! "2015-05.xlsx" wb))))
