@@ -52,12 +52,14 @@
 (defn prepare-for-excel
   "takes a vec of maps and prepares it for an excel sheet"
   [raw]
-  (cons ["Datum" "Von" "Bis" "Dauer" "Projekt" "Task" "Beschreibung" "Überstunden"]
+  (concat [["Mitarbeiter:" "Bernhard Sillipp" "" "Zeitraum:" "Mai 2015"]
+           ["Datum" "Von" "Bis" "Dauer" "Projekt" "Task" "Beschreibung" "Überstunden"]]
         (map map-values-to-vec (fix-times raw))))
 
 (defn format-header
-  [wb header-row]
-  (set-row-style! header-row (create-cell-style! wb {:font {:bold true}})))
+  [wb header-rows]
+  (doall
+   (map #(set-row-style! % (create-cell-style! wb {:font {:bold true}})) header-rows)))
 
 (defn col-seq
   "Returns a sequence of all cells in column col of the sheet"
@@ -66,7 +68,8 @@
 
 (defn format-cell
   [cell format]
-  (apply-date-format! cell format))
+  (when-not (nil? cell)
+    (apply-date-format! cell format)))
 
 (defn format-col
   [sheet col fmt]
@@ -96,11 +99,11 @@
     (if (= 0 (.getCellType (first row)))
       (.getDateCellValue (first row)))))
 
-(defn same-day?
+(defn different-day?
   ([row1]
    false)
   ([row1 row2]
-   (= (datum-of row1) (datum-of row2))))
+   (not= (datum-of row1) (datum-of row2))))
 
 (defn provide-style
   [cell workbook]
@@ -121,8 +124,7 @@
 (defn sep-day
   [rows]
   (when-not (empty? rows)
-    (if (same-day? (first rows) (second rows))
-      (println "ok")
+    (when (different-day? (first rows) (second rows))
       (row-border (first rows)))
     (sep-day (rest rows))))
 
@@ -134,12 +136,12 @@
   [data]
   (let [wb (create-workbook "Zeiterfassung" data)
         sheet (select-sheet "Zeiterfassung" wb)
-        header-row (first (row-seq sheet))]
+        header-rows (take 2 (row-seq sheet))]
     (do
       (format-cols sheet)
       (separate-days sheet)
       (format-col-size sheet)
-      (format-header wb header-row)
+      (format-header wb header-rows)
       (save-workbook! "2015-05.xlsx" wb))))
 
 (defn -main
