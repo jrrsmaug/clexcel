@@ -1,4 +1,4 @@
-(defproject clojure-noob "0.1.0-SNAPSHOT"
+(defproject clexcel "0.1.0-SNAPSHOT"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
@@ -9,3 +9,4 @@
   :main ^:skip-aot clexcel.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})
+

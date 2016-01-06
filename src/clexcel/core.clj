@@ -35,7 +35,8 @@
 
 (defn fix-t
   [time]
-  (tc/to-date (t/plus (timezoned time) (t/days 1))))
+  (when-not (nil? time)
+    (tc/to-date (t/plus (timezoned time) (t/days 1)))))
 
 (defn fix-time-von
   [entry]
@@ -157,12 +158,12 @@
       (save-workbook! filename wb))))
 
 (defn -main
-  "I don't do a whole lot ... yet."
+  "Run in 0Admin folder. Pass year and month as arguments."
   [year month]
 
-  (let [interval (format "%s-%02d" year (Integer/parseInt month))]
-    
+  (let [interval (format "%s-%02d" year (Integer/parseInt month))
+        destfile (format "Zeiterfassung/%s/%s.xlsx" year interval)]
     (save-month
      (prepare-for-excel (load-month year month) interval)
-     (format "%s.xlsx" interval))))
+     destfile)))
 
