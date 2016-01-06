@@ -7,9 +7,9 @@
 
 (defn load-diary
   "Load a diary into a map"
-  []
+  [year]
   (->> (load-workbook "Diary.xls")
-       (select-sheet "2015")
+       (select-sheet year)
        (select-columns
         {:B :datum :C :von :D :bis :E :dauer :F :projekt :G :task :H :beschreibung :I :ueberstunden})))
 
@@ -25,9 +25,9 @@
   (t/month (tc/to-local-date (timezoned (:datum entry)))))
 
 (defn load-month
-  [m]
-  (filter (fn [entry] (= (month-of entry) m))
-          (rest (load-diary))))
+  [year m]
+  (filter (fn [entry] (= (month-of entry) (Integer/parseInt m)))
+          (rest (load-diary year))))
 
 (defn map-values-to-vec
   [e]
@@ -51,8 +51,8 @@
 
 (defn prepare-for-excel
   "takes a vec of maps and prepares it for an excel sheet"
-  [raw]
-  (concat [["Mitarbeiter:" "Bernhard Sillipp" "" "Zeitraum:" "Mai 2015"]
+  [raw interval]
+  (concat [["Mitarbeiter:" "Bernhard Sillipp" "" "Zeitraum:" interval]
            ["Datum" "Von" "Bis" "Dauer" "Projekt" "Task" "Beschreibung" "Überstunden"]]
         (map map-values-to-vec (fix-times raw))))
 
@@ -140,25 +140,29 @@
   [sheet]
   (let [row-num (inc (.getLastRowNum sheet))
         row (.createRow sheet row-num)]
+    (.setCellValue (.createCell row 0) "Summe:")
     (put-sum (.createCell row 3) "D" row-num)
     (put-sum (.createCell row 7) "H" row-num)))
 
 (defn save-month
-  [data]
+  [data filename]
   (let [wb (create-workbook "Zeiterfassung" data)
-        sheet (select-sheet "Zeiterfassung" wb)
-        header-rows (take 2 (row-seq sheet))]
+        sheet (select-sheet "Zeiterfassung" wb)]
     (do
+      (add-sums sheet)
       (format-cols sheet)
       (separate-days sheet)
       (format-col-size sheet)
-      (format-header wb header-rows)
-      (add-sums sheet)
-      (save-workbook! "2015-05.xlsx" wb))))
+      (format-header wb (take 2 (row-seq sheet)))
+      (save-workbook! filename wb))))
 
 (defn -main
   "I don't do a whole lot ... yet."
-  [& args]
-  
-  (println (load-month 5) "Done!"))
+  [year month]
+
+  (let [interval (format "%s-%02d" year (Integer/parseInt month))]
+    
+    (save-month
+     (prepare-for-excel (load-month year month) interval)
+     (format "%s.xlsx" interval))))
 
