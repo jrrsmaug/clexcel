@@ -132,6 +132,17 @@
   [sheet]
   (sep-day (row-seq sheet)))
 
+(defn put-sum
+  [cell col row-num]
+  (.setCellFormula cell (format "SUM(%1$s3:%1$s%2$d)" col row-num)))
+
+(defn add-sums
+  [sheet]
+  (let [row-num (inc (.getLastRowNum sheet))
+        row (.createRow sheet row-num)]
+    (put-sum (.createCell row 3) "D" row-num)
+    (put-sum (.createCell row 7) "H" row-num)))
+
 (defn save-month
   [data]
   (let [wb (create-workbook "Zeiterfassung" data)
@@ -142,6 +153,7 @@
       (separate-days sheet)
       (format-col-size sheet)
       (format-header wb header-rows)
+      (add-sums sheet)
       (save-workbook! "2015-05.xlsx" wb))))
 
 (defn -main
